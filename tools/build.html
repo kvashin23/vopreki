@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сборка сайта «Вопреки»</title>
+<style>
+  body{margin:0;padding:32px 16px;background:#0b0c10;color:#fff;font:15px/1.5 system-ui,sans-serif}
+  main{max-width:720px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 6px}
+  p{color:#aaa;margin:0 0 20px}
+  button{height:48px;padding:0 24px;border:0;border-radius:99px;background:linear-gradient(100deg,#0891d0,#7b5cd6 50%,#ee3c96);color:#fff;font:700 15px system-ui;cursor:pointer}
+  button[disabled]{opacity:.5}
+  pre{margin-top:20px;padding:16px;border-radius:12px;background:#000;border:1px solid #333;white-space:pre-wrap;min-height:120px}
+  .ok{color:#9be22d}.bad{color:#ff6b6b}
+</style>
+</head>
+<body>
+<main>
+  <h1>Сборка сайта</h1>
+  <p>Берёт данные из <code>src/data.js</code>, собирает все страницы и записывает их в папку проекта. Работает, только если сайт открыт через <code>tools/serve.ps1</code>.</p>
+  <button id="go" type="button">Собрать сайт</button>
+  <pre id="log" aria-live="polite"></pre>
+</main>
+<script type="module">
+  import { pages } from '../src/render.js';
+  const log = document.getElementById('log'), go = document.getElementById('go');
+  const line = (t, cls = '') => { const s = document.createElement('span'); s.className = cls; s.textContent = t + '\n'; log.append(s); };
+  async function build() {
+    go.disabled = true; log.textContent = '';
+    let bad = 0;
+    for (const { path, html } of pages()) {
+      try {
+        const r = await fetch('/__write?path=' + encodeURIComponent(path), { method: 'POST', body: html });
+        if (!r.ok) throw new Error(await r.text());
+        line('✓ ' + path, 'ok');
+      } catch (e) { bad++; line('✗ ' + path + ' — ' + e.message, 'bad'); }
+    }
+    line(bad ? `Готово с ошибками: ${bad}` : 'Готово! Обновите страницы сайта.', bad ? 'bad' : 'ok');
+    go.disabled = false;
+  }
+  go.onclick = build;
+  if (location.hash === '#auto') build();
+</script>
+</body>
+</html>

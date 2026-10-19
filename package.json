@@ -1,0 +1,9 @@
+{
+  "name": "vopreki",
+  "private": true,
+  "type": "module",
+  "description": "Сайт спортивной академии «Вопреки»",
+  "scripts": {
+    "build": "node tools/build.mjs"
+  }
+}
