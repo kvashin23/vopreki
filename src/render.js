@@ -172,7 +172,7 @@ function contactsSection(withId = true) {
   return `
 <section class="sec"${withId ? ' id="contacts"' : ''} style="padding-top:0"><div class="wrap">
  <div class="cta rv"><div class="bearbg">${BEAR}</div><div class="g12" style="position:relative;align-items:center">
-  <div class="c6 t12"><h2 class="h h2">Первая<br>тренировка —<br>вопреки всему</h2><p style="margin-top:20px;max-width:440px;font-size:17px;color:rgba(0,0,0,.72)">Подберём направление, группу и удобное время. Перезвоним в течение рабочего дня.</p></div>
+  <div class="c6 t12"><h2 class="h h2">Первая<br>тренировка<br>вопреки всему</h2><p style="margin-top:20px;max-width:440px;font-size:17px;color:rgba(0,0,0,.72)">Подберём направление, группу и удобное время. Перезвоним в течение рабочего дня.</p></div>
   <div class="c5 t12" style="grid-column-end:-1">${form('Записаться', 'c')}</div></div></div>
  <div class="cts">
   <div class="ct-l rv">

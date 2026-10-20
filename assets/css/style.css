@@ -550,3 +550,17 @@ html.has-subnav{scroll-padding-top:calc(var(--hdr) + 72px)}
 @media(max-width:640px){.subnav .btn{display:none}}
 @media(max-width:1024px){.sch-d .sch-free{flex:1 1 200px;align-self:center}}
 @media(max-width:1024px){.art .g12>.c5{order:-1}.art-im{position:static;max-height:420px}.art-im img{width:100%;max-height:420px;object-fit:cover}}
+
+/* ---------- правки из «вопреки правки.pdf» ---------- */
+/* 1. Окно тренера: текст прокручивается внутри, фото остаётся на месте */
+.cbox{grid-template-rows:minmax(0,1fr);height:min(88vh,760px)}
+.cm-scroll{min-height:0;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.3) transparent}
+.cm-scroll::-webkit-scrollbar{width:6px}.cm-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:3px}
+.cm-scroll .btn{flex:none}
+@media(max-width:760px){.cbox{height:auto;grid-template-rows:auto}}
+/* 3. Отступ над блоками без верхнего поля при переходе из подменю */
+.sec[style*="padding-top:0"][id]{scroll-margin-top:clamp(32px,4vw,56px)}
+/* 4. Градиентный текст: место под надстрочные знаки (Й, Ё), иначе фон обрезает их */
+.h .gtext,.h.gtext{padding:.14em 0 .06em;margin:-.14em 0 -.06em}
+/* 5. Кнопка в карточке «Подберём удобное время» — по центру высоты */
+.pc.req .btn{margin-top:0;align-self:center}
