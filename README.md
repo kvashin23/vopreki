@@ -59,7 +59,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/serve.ps1
 
 ## Публикация
 
-Подойдёт любой статический хостинг: свой сервер с nginx, GitHub Pages, Netlify, Yandex Object Storage. Загружается вся папка, кроме `src/` и `tools/`, хотя они ничему не мешают.
+**Vercel:** настройки уже в `vercel.json`. При каждом пуше в `main` Vercel запускает `node tools/build.mjs --out dist` и публикует папку `dist` (страницы и `assets/`, без `src/` и `tools/`). В настройках проекта ничего менять не нужно.
+
+Другой статический хостинг (свой сервер с nginx, GitHub Pages, Netlify, Yandex Object Storage): загрузите содержимое `dist/` после `node tools/build.mjs --out dist` или папку проекта целиком.
 
 - `404.html` рассчитан на сайт в корне домена (`<base href="/">`).
 - Адрес сайта для `canonical`, Open Graph и `sitemap.xml` задаётся в `SITE.url`.
