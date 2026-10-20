@@ -34,8 +34,9 @@ while ($listener.IsListening) {
 
     # Запись собранных страниц: только .html/.xml/.txt и только вне служебных папок
     if ($req.HttpMethod -eq 'POST' -and $rel -eq '__write') {
-      $target = $req.QueryString['path']
-      $ok = $target -and $target -match '^[a-z0-9\-/]+\.(html|xml|txt)$' -and $target -notmatch '(^|/)\.\.(/|$)' -and $target -notmatch '^(tools|src|assets)/'
+      $target = $null
+      foreach ($kv in $req.Url.Query.TrimStart('?').Split('&')) { if ($kv.StartsWith('path=')) { $target = [Uri]::UnescapeDataString($kv.Substring(5)) } }
+      $ok = $target -and $target -match '^[a-z0-9а-яё\-/]+\.(html|xml|txt)$' -and $target -notmatch '(^|/)\.\.(/|$)' -and $target -notmatch '^(tools|src|assets)/'
       if (-not $ok) { Send $ctx 400 $utf8.GetBytes("bad path: $target") 'text/plain'; continue }
       $reader = New-Object IO.StreamReader($req.InputStream, $utf8)
       $body = $reader.ReadToEnd(); $reader.Close()

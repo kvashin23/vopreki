@@ -208,6 +208,23 @@
     inp.value = o;
   });
 
+  /* ---------- cookie-баннер и Яндекс.Метрика (только после согласия) ---------- */
+  const KEY = 'vopreki-cookie', banner = $('#cookie');
+  const metrikaId = +($('script[data-metrika]')?.dataset.metrika || 0);
+  const store = { get() { try { return localStorage.getItem(KEY); } catch { return null; } }, set(v) { try { localStorage.setItem(KEY, v); } catch {} } };
+  const loadMetrika = () => {
+    if (!metrikaId || window.ym) return;
+    (function (m, e, t, r, i, k, a) { m[i] = m[i] || function () { (m[i].a = m[i].a || []).push(arguments); }; m[i].l = 1 * new Date(); k = e.createElement(t); a = e.getElementsByTagName(t)[0]; k.async = 1; k.src = r; a.parentNode.insertBefore(k, a); })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js', 'ym');
+    window.ym(metrikaId, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true, ecommerce: 'dataLayer' });
+  };
+  const choice = store.get();
+  if (choice === 'all') loadMetrika();
+  else if (!choice && banner) banner.hidden = false;
+  $$('[data-cookie]').forEach(b => b.onclick = () => {
+    store.set(b.dataset.cookie); banner.hidden = true;
+    if (b.dataset.cookie === 'all') loadMetrika();
+  });
+
   $$('[data-form]').forEach(f => {
     const phone = f.elements.phone, err = $('.err', f), btn = $('button[type=submit]', f);
     mask(phone);

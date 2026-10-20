@@ -2,7 +2,11 @@
    Шаблоны страниц. pages() возвращает список {path, html} —
    его записывают на диск tools/build.mjs (Node) или tools/build.html (браузер).
    ========================================================= */
-import { SITE, I, D, BIO, NEWS, SERV, SLIDES, CHAMPS, DIR_CARDS, HOME_SERV, LEVELS, PADEL_TOURNAMENT_DAYS, BOOK_OPTIONS } from './data.js';
+import { SITE, I, D, BIO, NEWS, SERV, SLIDES, CHAMPS, DIR_CARDS, HOME_SERV, LEVELS, PADEL_TOURNAMENT_DAYS, BOOK_OPTIONS, LEGAL, REDIRECTS } from './data.js';
+import privacyDoc from './legal/privacy.js';
+import consentDoc from './legal/consent.js';
+import adsConsentDoc from './legal/ads-consent.js';
+const LEGAL_HTML = { privacy: privacyDoc, consent: consentDoc, 'ads-consent': adsConsentDoc };
 
 /* ---------- константы и помощники ---------- */
 const DIRS = ['padel', 'football', 'tennis', 'swim', 'gym'];
@@ -10,7 +14,9 @@ const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const PGN = 14; // ширина «подгонки» заголовков страниц, в символах
 const SLN = Math.max(...SLIDES.flatMap(s => s.h.map(t => t.length)));
 
-const img = p => SITE.uploads + encodeURI(p);
+const ABS = /^https?:/.test(SITE.uploads);
+const img = p => (ABS ? '' : R) + SITE.uploads + encodeURI(p);
+const imgAbs = p => ABS ? SITE.uploads + encodeURI(p) : url(SITE.uploads + encodeURI(p));
 const attr = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 const strip = s => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 const pad2 = n => String(n).padStart(2, '0');
@@ -40,8 +46,8 @@ function layout({ path, depth, title, description, image, active = '', body, htm
   const navR = [['services', 'Услуги'], ['news', 'Новости'], ['contacts', 'Контакты']]
     .map(([k, t]) => `<a href="${u(k + '/')}"${active === k ? ' class="on" aria-current="page"' : ''}>${t}</a>`).join('');
   const canonical = url(path.replace(/index\.html$/, ''));
-  const ogImage = image ? img(image) : url('assets/img/holo.jpg');
-  const privacy = SITE.privacyUrl ? `<a href="${SITE.privacyUrl}">Политика обработки персональных данных</a>` : '';
+  const ogImage = image ? imgAbs(image) : url('assets/img/holo.jpg');
+  const legalLinks = LEGAL.map(l => `<a href="${u(l.slug + '/')}">${l.short}</a>`).join('');
 
   return `<!doctype html>
 <html lang="ru"${htmlClass ? ` class="${htmlClass}"` : ''}>
@@ -101,11 +107,17 @@ ${body}
       <div class="c4 t12"><a class="logo" href="${u('')}" style="width:170px" aria-label="Вопреки — на главную">${LOGO}</a><p class="mute" style="margin-top:20px;max-width:320px;font-size:15px">Спортивная академия в Краснодаре: футбол, большой теннис, падел, бассейн и функциональный зал.</p></div>
       <div class="c2 t6"><h5>Направления</h5>${DIRS.map(k => `<a href="${u(k + '/')}">${D[k].name}</a>`).join('')}</div>
       <div class="c3 t6"><h5>Академия</h5><a href="${u('services/')}">Услуги и аренда</a><a href="${u('')}#champs">Наши чемпионы</a><a href="${u('news/')}">Новости</a><a href="${u('contacts/')}">Контакты</a></div>
-      <div class="c3 t12"><h5>Связаться</h5><a href="${SITE.phoneHref}">${SITE.phone}</a><a href="mailto:${SITE.email}">${SITE.email}</a><a href="${SITE.mapLink}" target="_blank" rel="noopener">${SITE.address}</a><a href="${SITE.telegram}" target="_blank" rel="noopener">Telegram</a></div>
+      <div class="c3 t12"><h5>Связаться</h5><a href="${SITE.phoneHref}">${SITE.phone}</a><a href="mailto:${SITE.email}">${SITE.email}</a><a href="${SITE.mapLink}" target="_blank" rel="noopener">${SITE.address}</a><a href="${SITE.telegram}" target="_blank" rel="noopener">Telegram</a><a href="${SITE.instagram}" target="_blank" rel="noopener">Instagram*</a></div>
     </div>
-    <div class="legal"><span>© ${new Date().getFullYear()} Спортивная академия «Вопреки». Все права защищены.</span><span>${privacy}</span></div>
+    <div class="legal"><span>© ${new Date().getFullYear()} Спортивная академия «Вопреки». Все права защищены.</span><span>${legalLinks}</span></div>
+    <p class="meta-note">${SITE.metaNote}</p>
   </div>
 </footer>
+
+<div class="cookie" id="cookie" role="region" aria-label="Уведомление о cookie" hidden>
+  <p>Мы используем cookie для улучшения работы сайта. Продолжая пользоваться сайтом, вы соглашаетесь на обработку файлов cookies и пользовательских данных в соответствии с <a href="${u('privacy/')}">политикой обработки персональных данных</a>.</p>
+  <div class="cookie-b"><button class="btn btn-w btn-sm" type="button" data-cookie="all">Принять</button><button class="btn btn-o btn-sm" type="button" data-cookie="necessary">Только необходимые</button></div>
+</div>
 
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
   <div class="box">
@@ -123,7 +135,7 @@ ${body}
 </div>
 <button class="totop" id="totop" type="button" aria-label="Наверх">${AR}</button>
 
-<script src="${R}assets/js/main.js" defer></script>
+<script src="${R}assets/js/main.js" data-metrika="${SITE.metrika || ''}" defer></script>
 </body>
 </html>
 `;
@@ -131,7 +143,6 @@ ${body}
 
 /* ---------- форма записи (одна разметка для модального окна и блока контактов) ---------- */
 function form(btn, id) {
-  const privacy = SITE.privacyUrl ? `<a href="${SITE.privacyUrl}" target="_blank" style="text-decoration:underline">обработку персональных данных</a>` : 'обработку персональных данных';
   return `<form class="form" data-form data-endpoint="${attr(SITE.formEndpoint)}" data-email="${attr(SITE.email)}" novalidate>
       <label class="sr" for="${id}-dir">Направление</label>
       <select class="inp" name="dir" id="${id}-dir">${BOOK_OPTIONS.map(o => `<option>${o}</option>`).join('')}</select>
@@ -139,7 +150,7 @@ function form(btn, id) {
       <input class="inp" name="name" id="${id}-name" placeholder="Имя" autocomplete="name" required>
       <label class="sr" for="${id}-phone">Телефон</label>
       <input class="inp" name="phone" id="${id}-phone" type="tel" placeholder="+7 (___) ___-__-__" autocomplete="tel" inputmode="tel" required>
-      <label class="consent"><input type="checkbox" name="consent" required><span>Согласен на ${privacy}</span></label>
+      <label class="consent"><input type="checkbox" name="consent" required><span>Даю <a href="${u('consent/')}" target="_blank">согласие на обработку персональных данных</a> в соответствии с <a href="${u('privacy/')}" target="_blank">политикой</a></span></label>
       <p class="err" role="alert" hidden></p>
       <button class="btn btn-k" type="submit">${btn} ${AR}</button>
       <div class="ok" role="status">Спасибо! Мы свяжемся с вами в ближайшее время 🙌</div>
@@ -160,6 +171,8 @@ function contactsSection(withId = true) {
    <a class="ct-row" href="${SITE.phoneHref}"><div><small>Телефон</small><span>${SITE.phone}</span></div>${AR}</a>
    <a class="ct-row" href="mailto:${SITE.email}"><div><small>Почта</small><span>${SITE.email}</span></div>${AR}</a>
    <a class="ct-row" href="${SITE.telegram}" target="_blank" rel="noopener"><div><small>Telegram</small><span>${SITE.telegramName}</span></div>${AR}</a>
+   <a class="ct-row" href="${SITE.instagram}" target="_blank" rel="noopener"><div><small>Instagram*</small><span>${SITE.instagramName}</span></div>${AR}</a>
+   <p class="meta-note">${SITE.metaNote}</p>
   </div>
   <div class="map rv d1"><iframe loading="lazy" title="Академия «Вопреки» на карте" src="${SITE.mapWidget}"></iframe></div>
  </div>
@@ -227,7 +240,7 @@ function home() {
    </div>
    <div class="c6 t12" style="display:flex;flex-direction:column;justify-content:flex-end">
      <div class="pfeat">
-       <div class="pf rv">${ico('coach')}<div><h3 class="h4t">Тренеры по паделу</h3><p>Поставят технику с первой тренировки</p></div></div>
+       <div class="pf rv">${ico('coach')}<div><h3 class="h4t">Лицензированные тренеры</h3><p>Обучались в Москве у специалистов из Испании</p></div></div>
        <div class="pf rv d1">${ico('cannon')}<div><h3 class="h4t">Пушка для мячей</h3><p>Сотни повторений удара за час</p></div></div>
        <div class="pf rv d2">${ico('glass')}<div><h3 class="h4t">Стеклянные стены</h3><p>Игра от стен — уникальная динамика</p></div></div>
        <div class="pf rv d3">${ico('crane')}<div><h3 class="h4t">3-й корт — крытый</h3><p>Скоро — падел круглый год</p></div></div>
@@ -270,10 +283,10 @@ ${contactsSection()}`;
 
   const jsonld = JSON.stringify({
     '@context': 'https://schema.org', '@type': 'SportsActivityLocation', name: 'Спортивная академия «Вопреки»',
-    url: SITE.url, telephone: SITE.phone.replace(/[^\d+]/g, ''), email: SITE.email, image: img(SLIDES[0].img),
+    url: SITE.url, telephone: SITE.phone.replace(/[^\d+]/g, ''), email: SITE.email, image: imgAbs(SLIDES[0].img),
     address: { '@type': 'PostalAddress', streetAddress: 'ул. Невкипелого, 24/4', addressLocality: 'Краснодар', addressCountry: 'RU' },
     geo: { '@type': 'GeoCoordinates', latitude: SITE.geo.lat, longitude: SITE.geo.lng },
-    sameAs: [SITE.telegram]
+    sameAs: [SITE.telegram, SITE.instagram]
   });
 
   return layout({
@@ -318,10 +331,11 @@ function coachCard(c, dirName, i) {
  <div class="cm-role">${c.r} · ${dirName}</div>
  <h3 class="h cm-h">${first}<br><span class="gtext">${last.join(' ')}</span></h3>
  ${b ? `<div><span class="chip"><span class="dot"></span>${b.x}</span></div>` : ''}
+ ${c.note ? `<div class="cm-s"><h4 class="cm-t">${dirName}</h4><p>${c.note}</p></div>` : ''}
  ${b ? b.s.map(([h, ps]) => `<div class="cm-s"><h4 class="cm-t">${h}</h4>${ps.map(p => `<p>${p}</p>`).join('')}</div>`).join('') : '<div class="cm-s"><p class="mute">Описание опыта и достижений тренера скоро появится.</p></div>'}
  <button class="btn btn-p" type="button" data-book="${attr(dirName)}">Записаться к тренеру ${AR}</button>
 </div>`;
-  return `<div class="co rv d${i % 4}" role="button" tabindex="0" data-coach aria-label="${attr(c.n)} — подробнее о тренере"><span class="co-more">Подробнее +</span>${photo}<div class="c"><div class="role">${c.r}</div><h3 class="co-n">${c.n}</h3></div><span class="bord"></span><template>${bio}</template></div>`;
+  return `<div class="co rv d${i % 4}" role="button" tabindex="0" data-coach aria-label="${attr(c.n)} — подробнее о тренере"><span class="co-more">Подробнее +</span>${photo}<div class="c"><div class="role">${c.r}</div><h3 class="co-n">${c.n}</h3>${c.note ? `<p class="co-note">${c.note}</p>` : ''}</div><span class="bord"></span><template>${bio}</template></div>`;
 }
 
 function directionPage(k) {
@@ -449,6 +463,41 @@ function contactsPage() {
   });
 }
 
+/* ---------- юридические документы ---------- */
+function legalPage(l) {
+  at(1);
+  const others = LEGAL.filter(x => x !== l);
+  const body = `
+<article class="art legal-page"><div class="wrap">
+ <nav class="crumbs" aria-label="Хлебные крошки"><a href="${u('')}">Главная</a> / Документы</nav>
+ <h1 class="art-h">${l.title}</h1>
+ <div class="legal-meta"><a class="btn btn-o btn-sm" href="${R}assets/docs/${l.docx}" download>Скачать .docx</a>${others.map(x => `<a class="btn btn-o btn-sm" href="${u(x.slug + '/')}">${x.short}</a>`).join('')}</div>
+ <div class="doc">${LEGAL_HTML[l.slug]}</div>
+</div></article>`;
+  return layout({ path: `${l.slug}/index.html`, depth: 1, title: `${l.title} | Академия «Вопреки»`, description: `${l.title} — спортивная академия «Вопреки», ИП Захарова А. В.`, body });
+}
+
+/* ---------- переадресация со старых адресов WordPress ---------- */
+function redirectPage(from, to) {
+  const depth = from.split('/').length;
+  const target = '../'.repeat(depth) + to;
+  return `<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Страница переехала | Академия «Вопреки»</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="${url(to)}">
+<meta http-equiv="refresh" content="0; url=${target}">
+<script>location.replace(${JSON.stringify(target)} + location.hash)</script>
+</head>
+<body style="background:#000;color:#fff;font:16px system-ui;padding:40px">
+<p>Страница переехала: <a href="${target}" style="color:#fff">${url(to)}</a></p>
+</body>
+</html>
+`;
+}
+
 function notFound() {
   at(0);
   // 404 открывается по любому адресу, поэтому ссылки в нём от корня сайта
@@ -470,10 +519,12 @@ export function pages() {
     { path: 'news/index.html', html: newsPage() },
     ...NEWS.map(n => ({ path: `news/${n.slug}/index.html`, html: newsItem(n) })),
     { path: 'contacts/index.html', html: contactsPage() },
+    ...LEGAL.map(l => ({ path: `${l.slug}/index.html`, html: legalPage(l) })),
     { path: '404.html', html: notFound() },
   ];
   const today = new Date().toISOString().slice(0, 10);
   const locs = out.filter(p => p.path !== '404.html').map(p => url(p.path.replace(/index\.html$/, '')));
+  for (const [from, to] of Object.entries(REDIRECTS)) out.push({ path: `${from}/index.html`, html: redirectPage(from, to) });
   out.push({ path: 'sitemap.xml', html: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${locs.map(l => `  <url><loc>${l}</loc><lastmod>${today}</lastmod></url>`).join('\n')}\n</urlset>\n` });
   out.push({ path: 'robots.txt', html: `User-agent: *\nAllow: /\n\nSitemap: ${url('sitemap.xml')}\n` });
   return out;

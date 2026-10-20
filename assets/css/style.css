@@ -498,3 +498,31 @@ html.has-subnav{scroll-padding-top:calc(var(--hdr) + 72px)}
 .track:focus-visible{outline-offset:-2px}
 @media(max-width:640px){.pc.req{flex-direction:column;align-items:flex-start}}
 .mnav a{font-size:clamp(24px,7.4vw,34px)}
+
+/* ---------- документы ---------- */
+.legal-page .art-h{max-width:900px;margin-top:8px}
+.legal-meta{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0 8px}
+.doc{max-width:900px;margin-top:28px;font-size:16px;line-height:1.65;color:rgba(255,255,255,.86)}
+.doc h2{font-size:clamp(20px,2vw,26px);font-weight:800;line-height:1.25;margin:40px 0 14px;color:#fff}
+.doc p{margin:0 0 12px}
+.doc ol,.doc ul{margin:0 0 16px;padding-left:24px;display:flex;flex-direction:column;gap:8px}
+.doc li ul,.doc li ol{margin:8px 0 0}
+.doc a{color:#fff;text-decoration:underline;text-underline-offset:3px;word-break:break-word}
+.doc strong{color:#fff}
+.doc .tbl{overflow-x:auto;margin:8px 0 20px;border:1px solid var(--line);border-radius:16px}
+.doc table{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
+.doc th,.doc td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+.doc tr:last-child td{border-bottom:0}
+.doc th{background:var(--g2);color:#fff;font-weight:700}
+.doc td+td{border-left:1px solid var(--line)}
+@media(max-width:760px){.doc table{min-width:640px}}
+
+/* ---------- Instagram, тренеры, cookie ---------- */
+.meta-note{margin-top:14px;font-size:12px;line-height:1.4;color:var(--mute2)}
+.co-note{margin-top:8px;font-size:13px;line-height:1.35;color:rgba(255,255,255,.8)}
+.consent a{text-decoration:underline;text-underline-offset:2px}
+.legal a{display:inline-block;margin:0 18px 6px 0}
+.cookie{position:fixed;left:16px;right:16px;bottom:16px;z-index:70;max-width:560px;padding:20px 22px;border-radius:20px;background:rgba(11,12,16,.94);backdrop-filter:blur(14px);border:1px solid var(--line2);box-shadow:0 20px 60px -20px #000;font-size:14px;line-height:1.5;color:rgba(255,255,255,.85)}
+.cookie a{color:#fff;text-decoration:underline}
+.cookie-b{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.cookie ~ .totop{bottom:20px}

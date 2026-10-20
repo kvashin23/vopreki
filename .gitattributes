@@ -2,3 +2,7 @@
 *.ps1 text eol=crlf
 *.ttf binary
 *.jpg binary
+*.png binary
+*.jpeg binary
+*.docx binary
+*.svg text eol=lf
