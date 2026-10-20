@@ -526,3 +526,27 @@ html.has-subnav{scroll-padding-top:calc(var(--hdr) + 72px)}
 .cookie a{color:#fff;text-decoration:underline}
 .cookie-b{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .cookie ~ .totop{bottom:20px}
+
+/* ---------- выпадающий список ---------- */
+.sel{position:relative}
+.sel-native{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none}
+.sel-btn{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;cursor:pointer;background-image:none}
+.sel-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel-btn svg{width:18px;height:18px;flex:none;transition:transform .3s var(--ease)}
+.sel.open .sel-btn{border-color:#000;background:#fff}
+.sel.open .sel-btn svg{transform:rotate(180deg)}
+.sel-list{position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:20;margin:0;padding:6px;list-style:none;max-height:300px;overflow:auto;border-radius:18px;background:#fff;color:#000;box-shadow:0 24px 60px -18px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.06);outline:none;animation:selin .22s var(--ease)}
+.sel-list li{position:relative;padding:12px 40px 12px 14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s,color .15s}
+.sel-list li.act{background:#f0f0f4}
+.sel-list li[aria-selected="true"]{background:var(--grad);color:#fff}
+.sel-list li[aria-selected="true"]:after{content:"";position:absolute;right:16px;top:50%;width:12px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:translateY(-70%) rotate(-45deg)}
+@keyframes selin{from{opacity:0;transform:translateY(-6px)}}
+.legal-meta .btn{white-space:normal;height:auto;min-height:44px;padding:10px 18px;line-height:1.3}
+@media(max-width:760px){.pager button{min-height:44px}}
+.h2{line-height:.98}
+.cursor{opacity:0!important}
+.cursor.on{opacity:1!important}
+.sch-free{font-size:12px;line-height:1.4;color:var(--mute);padding:6px 4px}
+@media(max-width:640px){.subnav .btn{display:none}}
+@media(max-width:1024px){.sch-d .sch-free{flex:1 1 200px;align-self:center}}
+@media(max-width:1024px){.art .g12>.c5{order:-1}.art-im{position:static;max-height:420px}.art-im img{width:100%;max-height:420px;object-fit:cover}}

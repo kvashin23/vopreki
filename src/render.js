@@ -30,7 +30,8 @@ const WA = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><pat
 
 const ico = (k, extra = '') => `<span class="ico"${extra}><svg viewBox="0 0 24 24" aria-hidden="true">${I[k]}</svg></span>`;
 const chip = ([d, t]) => `<span class="chip">${d ? '<span class="dot"></span>' : ''}${t}</span>`;
-const hTitle = (arr, tag = 'h1') => `<${tag} class="h h1 fit" style="--n:${PGN}">${arr.map((t, i) => `<span${i === 1 ? ' class="gtext"' : ''} style="display:block">${t}</span>`).join('')}</${tag}>`;
+// --n: ширина строки в символах для подгонки; длинные слова с широкими буквами (Ф, Щ, Ы) получают запас
+const hTitle = (arr, tag = 'h1') => `<${tag} class="h h1 fit" style="--n:${Math.max(PGN, Math.max(...arr.map(t => t.length)) + 1.5)}">${arr.map((t, i) => `<span${i === 1 ? ' class="gtext"' : ''} style="display:block">${t}</span>`).join('')}</${tag}>`;
 const secHead = (eyebrow, title, extra = '') => `<div class="sec-head"><div><span class="eyebrow rv">${eyebrow}</span><h2 class="h h2 rv d1" style="margin-top:18px">${title}</h2></div>${extra}</div>`;
 
 /* Ссылки: все относительные, чтобы сайт работал и в корне домена, и в подпапке */
@@ -38,6 +39,14 @@ let R = '';
 const at = depth => { R = '../'.repeat(depth); };
 const u = p => (R + p) || './';
 const url = p => SITE.url.replace(/\/$/, '') + '/' + p;
+
+/* ---------- типографика: неразрывный пробел после коротких слов («с вами», «в Краснодаре») ---------- */
+const SHORT = /(^|[\s(«—])(а|и|в|во|с|со|к|ко|о|об|у|на|по|за|от|до|из|не|ни|для|без|при|про|над|под|что|как|это)\s+(?=[^\s<])/gi;
+const typo = html => html.split(/(<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>)/g)
+  .map(part => part.startsWith('<') ? part : part
+    .replace(SHORT, (m, pre, w) => `${pre}${w} `).replace(SHORT, (m, pre, w) => `${pre}${w} `)
+    .replace(/ +(—|–)/g, ' $1'))
+  .join('');
 
 /* ---------- каркас страницы ---------- */
 function layout({ path, depth, title, description, image, active = '', body, htmlClass = '', jsonld = '' }) {
@@ -47,9 +56,10 @@ function layout({ path, depth, title, description, image, active = '', body, htm
     .map(([k, t]) => `<a href="${u(k + '/')}"${active === k ? ' class="on" aria-current="page"' : ''}>${t}</a>`).join('');
   const canonical = url(path.replace(/index\.html$/, ''));
   const ogImage = image ? imgAbs(image) : url('assets/img/holo.jpg');
+  const bookDefault = D[active] ? D[active].name : '';
   const legalLinks = LEGAL.map(l => `<a href="${u(l.slug + '/')}">${l.short}</a>`).join('');
 
-  return `<!doctype html>
+  return typo(`<!doctype html>
 <html lang="ru"${htmlClass ? ` class="${htmlClass}"` : ''}>
 <head>
 <meta charset="utf-8">
@@ -85,7 +95,7 @@ ${jsonld ? `<script type="application/ld+json">${jsonld}</script>\n` : ''}</head
     <div class="hdr-r">
       <nav class="nav r" aria-label="Академия">${navR}</nav>
       <div class="soc"><a href="${SITE.telegram}" target="_blank" rel="noopener" aria-label="Telegram">${TG}</a><a href="${SITE.whatsapp}" target="_blank" rel="noopener" aria-label="WhatsApp">${WA}</a></div>
-      <button class="btn btn-p" type="button" data-book>Записаться</button>
+      <button class="btn btn-p" type="button" data-book="${bookDefault}">Записаться</button>
       <button class="burger" id="burger" type="button" aria-label="Открыть меню" aria-controls="mnav" aria-expanded="false"><span></span></button>
     </div>
   </div>
@@ -94,7 +104,7 @@ ${jsonld ? `<script type="application/ld+json">${jsonld}</script>\n` : ''}</head
 <nav class="mnav" id="mnav" aria-label="Меню">
   <button class="x" id="mclose" type="button" aria-label="Закрыть меню">✕</button>
   <a href="${u('')}">Главная</a>${DIRS.map(k => `<a href="${u(k + '/')}">${D[k].name.replace('Функциональный', 'Функцио&shy;нальный')}</a>`).join('')}<a href="${u('services/')}">Услуги</a><a href="${u('news/')}">Новости</a><a href="${u('contacts/')}">Контакты</a>
-  <div class="mnav-b"><a class="btn btn-p" href="${SITE.phoneHref}">${SITE.phone}</a><button class="btn btn-o" type="button" data-book>Записаться</button></div>
+  <div class="mnav-b"><a class="btn btn-p" href="${SITE.phoneHref}">${SITE.phone}</a><button class="btn btn-o" type="button" data-book="${bookDefault}">Записаться</button></div>
 </nav>
 
 <main id="main">
@@ -138,7 +148,7 @@ ${body}
 <script src="${R}assets/js/main.js" data-metrika="${SITE.metrika || ''}" defer></script>
 </body>
 </html>
-`;
+`);
 }
 
 /* ---------- форма записи (одна разметка для модального окна и блока контактов) ---------- */
@@ -302,7 +312,7 @@ ${contactsSection()}`;
 function schedule(k) {
   const d = D[k], s = d.sched;
   if (s.type === 'padel') {
-    return `<div class="sch">${DAYS.map((day, i) => `<div class="sch-d" data-day="${i}"><b>${day}</b>${T.includes(i) ? '<div class="ev t"><strong>Турнир</strong><span>Падел · каждую неделю</span></div>' : ''}<div class="ev"><strong>Аренда</strong><span>2 корта · по записи</span></div><div class="ev m"><strong>Тренировки</strong><span>с тренером / с пушкой</span></div></div>`).join('')}</div>
+    return `<div class="sch">${DAYS.map((day, i) => `<div class="sch-d" data-day="${i}"><b>${day}</b>${T.includes(i) ? '<div class="ev t"><strong>Турнир</strong><span>Падел · запись у администратора</span></div>' : ''}<span class="sch-free">Корты и тренировки — по записи</span></div>`).join('')}</div>
 <div class="note">${ico('cal')}<span>Время старта турниров и свободные слоты на корты — у администратора: <a href="${SITE.phoneHref}" style="color:#fff;font-weight:700">${SITE.phone}</a></span></div>`;
   }
   if (s.type === 'request') {
@@ -422,6 +432,7 @@ function newsPage() {
   const body = miniHero('Новости', ['Новости', 'академии'], 'Турниры, победы воспитанников и события «Вопреки».', '2026/06/чемп5.jpg') + `
 <section class="sec"><div class="wrap">
  <div class="sch-f" data-nf role="group" aria-label="Фильтр новостей"><button class="fbtn on" type="button" data-f="*" aria-pressed="true">Все</button>${cats.map(c => `<button class="fbtn" type="button" data-f="${c}" aria-pressed="false">${c}</button>`).join('')}</div>
+ <h2 class="sr">Все новости</h2>
  <div class="news" id="nlist">${NEWS.map(n => newsCard(n)).join('')}</div>
 </div></section>` + contactsSection();
   return layout({

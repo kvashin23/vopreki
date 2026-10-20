@@ -13,7 +13,8 @@
   addEventListener('scroll', onScroll, { passive: true }); onScroll();
   totop.onclick = () => scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
   if (matchMedia('(hover:hover) and (pointer:fine)').matches && !reduced) {
-    addEventListener('pointermove', e => { cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px'; }, { passive: true });
+    addEventListener('pointermove', e => { cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px'; cursor.classList.add('on'); }, { passive: true });
+    document.documentElement.addEventListener('mouseleave', () => cursor.classList.remove('on'));
     document.addEventListener('pointerover', e => cursor.classList.toggle('big', !!e.target.closest('a,button,.dir,.card-ch,[data-coach]')));
   }
 
@@ -145,7 +146,12 @@
       sub.forEach(a => {
         const on = a.getAttribute('href') === '#' + e.target.id;
         a.classList.toggle('on', on);
-        if (on) a.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+        // Двигаем только горизонтальную ленту подменю. scrollIntoView здесь нельзя:
+        // он запускает прокрутку всей страницы и «перехватывает» колесо мыши.
+        if (on) {
+          const bar = a.parentElement, dx = a.getBoundingClientRect().left - bar.getBoundingClientRect().left;
+          bar.scrollTo({ left: bar.scrollLeft + dx - (bar.clientWidth - a.offsetWidth) / 2, behavior: reduced ? 'auto' : 'smooth' });
+        }
       });
     }), { rootMargin: '-45% 0px -50% 0px' });
     sub.forEach(a => { const el = document.getElementById(a.getAttribute('href').slice(1)); el && so.observe(el); });
@@ -155,12 +161,12 @@
   const modal = $('#modal'), cm = $('#cmodal');
   let lastFocus = null;
   const open = m => { lastFocus = document.activeElement; m.classList.add('open'); document.body.classList.add('lock'); setTimeout(() => ($('.x', m) || m).focus(), 50); };
-  const close = m => { if (!m.classList.contains('open')) return; m.classList.remove('open'); if (!$('.modal.open')) document.body.classList.remove('lock'); lastFocus && lastFocus.focus && lastFocus.focus(); };
+  const close = m => { if (!m.classList.contains('open')) return; $$('.sel.open .sel-btn', m).forEach(b => b.click()); m.classList.remove('open'); if (!$('.modal.open')) document.body.classList.remove('lock'); lastFocus && lastFocus.focus && lastFocus.focus(); };
 
   const openBook = v => {
     close(cm);
     const f = $('.form', modal), s = $('select', f);
-    if (v) { const key = v.toLowerCase().split(' ')[0].slice(0, 5); const o = [...s.options].find(o => o.text.toLowerCase().includes(key)); if (o) s.value = o.text; }
+    if (v) { const key = v.toLowerCase().split(' ')[0].slice(0, 5); const o = [...s.options].find(o => o.text.toLowerCase().includes(key)); if (o) { s.value = o.text; s.dispatchEvent(new Event('change')); } }
     f.classList.remove('sent');
     open(modal);
   };
@@ -179,13 +185,15 @@
     if (co && co.classList.contains('co')) openCoach(co);
   });
   addEventListener('keydown', e => {
+    // Escape сначала закрывает открытый выпадающий список, и только потом — окно
+    if (e.key === 'Escape' && $('.sel.open')) { $('.sel.open .sel-btn').click(); return; }
     if (e.key === 'Escape') { close(modal); close(cm); if (mnav.classList.contains('open')) setMenu(false); }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.co[data-coach]')) { e.preventDefault(); openCoach(e.target); }
     // удерживаем фокус внутри открытого окна
     if (e.key === 'Tab') {
       const m = $('.modal.open') || (mnav.classList.contains('open') ? mnav : null);
       if (!m) return;
-      const f = $$('a[href],button:not([disabled]),input,select,textarea', m).filter(x => x.offsetParent !== null);
+      const f = $$('a[href],button:not([disabled]),input,select,textarea', m).filter(x => x.offsetParent !== null && x.tabIndex !== -1);
       if (!f.length) return;
       if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
       else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
@@ -207,6 +215,57 @@
     if (p.length > 8) o += '-' + p.slice(8, 10);
     inp.value = o;
   });
+
+  /* ---------- выпадающий список в фирменном стиле (поверх нативного select) ---------- */
+  let selN = 0;
+  const enhanceSelect = s => {
+    const id = 'sel' + (++selN);
+    const wrap = document.createElement('div'); wrap.className = 'sel';
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'inp sel-btn'; btn.id = id + '-b';
+    btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
+    const lbl = document.querySelector(`label[for="${s.id}"]`);
+    if (lbl) btn.setAttribute('aria-labelledby', (lbl.id ||= id + '-l') + ' ' + id + '-b');
+    btn.innerHTML = '<span></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+    const list = document.createElement('ul');
+    list.className = 'sel-list'; list.id = id + '-list'; list.setAttribute('role', 'listbox'); list.tabIndex = -1; list.hidden = true;
+    if (lbl) list.setAttribute('aria-labelledby', lbl.id);
+    btn.setAttribute('aria-controls', list.id);
+    [...s.options].forEach((o, i) => {
+      const li = document.createElement('li'); li.id = `${id}-o${i}`; li.setAttribute('role', 'option'); li.textContent = o.text; li.dataset.i = i;
+      list.append(li);
+    });
+    s.after(wrap); wrap.append(s, btn, list);
+    s.classList.add('sel-native'); s.tabIndex = -1; s.setAttribute('aria-hidden', 'true');
+    const opts = [...list.children];
+    let act = 0;
+    const sync = () => {
+      $('span', btn).textContent = s.options[s.selectedIndex]?.text || '';
+      opts.forEach((li, i) => li.setAttribute('aria-selected', i === s.selectedIndex));
+    };
+    const mark = i => { act = (i + opts.length) % opts.length; opts.forEach((li, j) => li.classList.toggle('act', j === act)); list.setAttribute('aria-activedescendant', opts[act].id); opts[act].scrollIntoView({ block: 'nearest' }); };
+    const open = () => { list.hidden = false; wrap.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); mark(s.selectedIndex); list.focus({ preventScroll: true }); };
+    const close = (focus = true) => { if (list.hidden) return; list.hidden = true; wrap.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); if (focus) btn.focus(); };
+    const pick = i => { s.selectedIndex = i; s.dispatchEvent(new Event('change', { bubbles: true })); close(); };
+    btn.addEventListener('click', () => list.hidden ? open() : close());
+    btn.addEventListener('keydown', e => { if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) { e.preventDefault(); open(); } });
+    list.addEventListener('click', e => { const li = e.target.closest('li'); if (li) pick(+li.dataset.i); });
+    list.addEventListener('mousemove', e => { const li = e.target.closest('li'); if (li && +li.dataset.i !== act) mark(+li.dataset.i); });
+    list.addEventListener('keydown', e => {
+      const k = e.key;
+      if (k === 'ArrowDown' || k === 'ArrowUp') { e.preventDefault(); mark(act + (k === 'ArrowDown' ? 1 : -1)); }
+      else if (k === 'Home' || k === 'End') { e.preventDefault(); mark(k === 'Home' ? 0 : opts.length - 1); }
+      else if (k === 'Enter' || k === ' ') { e.preventDefault(); pick(act); }
+      else if (k === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+      else if (k === 'Tab') close(false);
+      else if (k.length === 1) { const n = opts.findIndex((li, j) => j > act && li.textContent.toLowerCase().startsWith(k.toLowerCase())); const m = n > -1 ? n : opts.findIndex(li => li.textContent.toLowerCase().startsWith(k.toLowerCase())); if (m > -1) mark(m); }
+    });
+    document.addEventListener('pointerdown', e => { if (!wrap.contains(e.target)) close(false); });
+    s.addEventListener('change', sync);
+    s.form?.addEventListener('reset', () => setTimeout(sync));
+    sync();
+  };
+  $$('select.inp').forEach(enhanceSelect);
 
   /* ---------- cookie-баннер и Яндекс.Метрика (только после согласия) ---------- */
   const KEY = 'vopreki-cookie', banner = $('#cookie');
